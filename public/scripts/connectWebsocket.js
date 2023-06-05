@@ -12,13 +12,9 @@ function connectServer(){
             const data = msg.data
             const type = msg.type
             console.log(msg)
-            //const emoteDensity = msg.emoteDensity
-            //const imageURL = msg.emoteURL
-
-            //generateEmotes(emoteDensity, imageURL)
             switch(type) {
                 case "executeAnimation":
-                    const imageLink = data.url
+                    const imageLink = data.emotes
                     const emoteDensity = data.emoteDensity
                     generateEmotes(emoteDensity, imageLink)
 
