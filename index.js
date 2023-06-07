@@ -34,13 +34,6 @@ function initializeWSS() {
     wss.on("connection", (socket) => {
         console.log("Connection recieved.")
         console.log(socket.protocol)
-        socket.send(JSON.stringify({
-            type: "executeAnimation",
-            data: {
-                url: AYAYA_URL,
-                emoteDensity: 5
-            }
-        }))
 
         switch(socket.protocol){
             case("streamDisplay"):
