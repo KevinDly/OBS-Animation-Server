@@ -16,7 +16,8 @@ function connectServer(){
                 case "executeAnimation":
                     const imageLink = data.emotes
                     const emoteDensity = data.emoteDensity
-                    generateEmotes(emoteDensity, imageLink)
+                    const soundEnabled = data.soundEnabled
+                    generateEmotes(emoteDensity, imageLink, soundEnabled)
 
                     break;
                 default:

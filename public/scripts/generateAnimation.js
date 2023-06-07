@@ -78,11 +78,16 @@ function executeAnimation(num, imageURL) {
     //drawParabola(0)
 }
 
-function generateEmotes(emoteDensity, emoteURLs) {
+function generateEmotes(emoteDensity, emoteURLs, soundEnabled) {
     if(emoteURLs === undefined) {
         return
     }
+    const playSound = new Audio("https://cdn.discordapp.com/attachments/319692273556258816/1116040911575588914/AYAYA_AYAYA_-_Sound_Effect_HD.mp3")
 
+    if(soundEnabled) {
+        playSound.volume = .5
+        playSound.play()
+    }
     for (let i = 0; i < parseInt(emoteDensity); i++) {
         console.log(emoteURLs)
         const modIndex = i % emoteURLs.length
