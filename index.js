@@ -3,6 +3,7 @@ import * as http from 'http'
 import express from "express"
 import cors from "cors"
 import { connectTwitch, getTwitchEmotes } from "./api/twitchapi.js"
+import { get7TVEmotes } from "./api/7tvapi.js"
 import 'dotenv/config'
 
 const AYAYA_URL = "https://play-lh.googleusercontent.com/kTkV3EWtNTDVCzRnUdbI5KdXm6Io-IM4Fb3mDcmX9-EOCEXJxnAxaph_leEn6m61E0I"
@@ -35,6 +36,7 @@ function initializeWSS() {
         console.log("Connection recieved.")
         console.log(socket.protocol)
 
+        //TODO: Remove unused connections.
         switch(socket.protocol){
             case("streamDisplay"):
                 displaySockets.push(socket)
@@ -42,6 +44,7 @@ function initializeWSS() {
                 break;
             case("streamerController"):
                 controllerSockets.push(socket)
+                console.log(controllerSockets.length)
                 const data = {
                     type: "recievedEmotes",
                     data: emotes
@@ -90,7 +93,8 @@ additional emotes have been added or modified, and update client based on that
 information.
 */
 async function connectAPIs(callback) {
+    let connect7TV = () => { get7TVEmotes(emotes, "7TV", callback) }
     connectTwitch(process.env['TWITCH_API_SECRET'], (response) => {
-        getTwitchEmotes(response, emotes, "Twitch.tv Global", callback)
+        getTwitchEmotes(response, emotes, "Twitch.tv Global", connect7TV)
     })
 }

@@ -6,7 +6,7 @@ const TWITCH_OAUTH_URL = 'https://id.twitch.tv/oauth2/token'
 
 //TODO: Replace a, b.
 //Function that grabs the emotes from a connected api.
-export function getTwitchEmotes({access_token, a, b}, emoteList, source, callback = () => {}) {
+export function getTwitchEmotes({access_token, a, b}, emoteDict, source, callback = () => {}) {
     fetch(TWITCH_GLOBAL_EMOTES_URL, {
         headers: {
             'Authorization': 'Bearer ' + access_token,
@@ -15,8 +15,9 @@ export function getTwitchEmotes({access_token, a, b}, emoteList, source, callbac
     })
     .then(response => response.json())
     .then(response => {
-        emoteList[source] = response
+        emoteDict[source] = response
         console.log("Initializing Callback")
+        console.log(emoteDict)
         callback()
     })
 }
