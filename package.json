@@ -14,5 +14,9 @@
     "express": "^4.18.2",
     "ws": "^8.12.1"
   },
+  "pkg": {
+    "scripts": "api/*.js",
+    "assets": "public/**/*"
+  },
   "type": "module"
 }

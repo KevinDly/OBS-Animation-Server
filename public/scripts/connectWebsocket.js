@@ -14,10 +14,14 @@ function connectServer(){
             console.log(msg)
             switch(type) {
                 case "executeAnimation":
-                    const imageLink = data.emotes
-                    const emoteDensity = data.emoteDensity
-                    const soundEnabled = data.soundEnabled
-                    generateEmotes(emoteDensity, imageLink, soundEnabled)
+                    const imageLinks = data["emote"].emotes
+                    const emoteDensity = data["emote"].emoteDensity
+                    const soundLinks = data["sound"].sounds
+                    const soundEnabled = data["sound"].soundEnabled
+                    generateEmotes(imageLinks, soundLinks, {
+                        soundEnabled: soundEnabled,
+                        emoteDensity: emoteDensity
+                    })
 
                     break;
                 default:
