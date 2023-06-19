@@ -1,13 +1,14 @@
-import { WebSocketServer } from "ws"
+import { WebSocketServer, WebSocket } from "ws"
 import * as http from 'http'
 import express from "express"
 import cors from "cors"
+import * as child from "child_process"
 import { connectTwitch, getTwitchEmotes } from "./api/twitchapi.js"
 import { get7TVEmotes } from "./api/7tvapi.js"
 import 'dotenv/config'
 
 const AYAYA_URL = "https://play-lh.googleusercontent.com/kTkV3EWtNTDVCzRnUdbI5KdXm6Io-IM4Fb3mDcmX9-EOCEXJxnAxaph_leEn6m61E0I"
-
+const socketCleanupTimerinMilis = 30000
 const port = 2999
 const app = express()
 
@@ -30,8 +31,35 @@ connectAPIs(() => {
     initializeWSS()
 })
 
+//Function that checks if any websockets are closed.
+//If they are then they are not appended onto the new list.
+//controllerSockets is then updated.
+function checkWebsockets() {
+    console.log("Checking websockets")
+    let updatedSockets = []
+    controllerSockets.forEach((socket) => {
+        if(socket.readyState != WebSocket.CLOSED) {
+            updatedSockets.push(socket)
+        }
+    })
+
+    controllerSockets = updatedSockets
+    console.log(controllerSockets.length)
+}
+
 function initializeWSS() {
     console.log(emotes)
+
+    //Enable unused socket cleanup.
+    setInterval(() => {
+        checkWebsockets()
+    }, socketCleanupTimerinMilis)
+
+    //Enable socket events.
+    setupSockets()
+}
+
+async function setupSockets() {
     wss.on("connection", (socket) => {
         console.log("Connection recieved.")
         console.log(socket.protocol)
@@ -55,12 +83,13 @@ function initializeWSS() {
         }
 
     })
+
     server.listen(port, () => {
         console.log(`Server started on port ${server.address().port}`);
     })
 }
 
-function controllerSocketConnection(socket) {
+async function controllerSocketConnection(socket) {
     socket.on("message", (message) => {
         let newMessage = JSON.parse(message)
         const type = newMessage.type
