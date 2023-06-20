@@ -2,34 +2,43 @@ import { WebSocketServer, WebSocket } from "ws"
 import * as http from 'http'
 import express from "express"
 import cors from "cors"
-import * as child from "child_process"
 import { connectTwitch, getTwitchEmotes } from "./api/twitchapi.js"
 import { get7TVEmotes } from "./api/7tvapi.js"
 import 'dotenv/config'
+import { connection } from "./utils/databaseUtils.js"
 
 const AYAYA_URL = "https://play-lh.googleusercontent.com/kTkV3EWtNTDVCzRnUdbI5KdXm6Io-IM4Fb3mDcmX9-EOCEXJxnAxaph_leEn6m61E0I"
-const socketCleanupTimerinMilis = 30000
+const socketCleanupTimerinMilis = process.env['SOCKET_CLEANUP_TIMER_IN_MILIS']
 const port = 2999
 const app = express()
+
+const SOUND_TABLE = "sound_information"
+
+const server = http.createServer(app)
+const wss = new WebSocketServer({ server })
+
+let emotes = {}
+let sounds = []
 
 app.use(cors({
     origin: true
 }))
 
 app.use(express.static("public"))
-const server = http.createServer(app)
-const wss = new WebSocketServer({ server })
-
-const emotes = {}
 
 console.log("Server initialized")
 let displaySockets = []
 let controllerSockets = []
 
 console.log("Connecting to APIs")
-connectAPIs(() => {
-    initializeWSS()
-})
+
+//TODO: MAKE IT SO THAT YOU DONT HAVE TO KEEP ADDING ON TO THE CALLBACKS WHEN YOU NEED TO CHAIN THEM
+connectMYSQLDatabase(() => 
+    {
+        connectAPIs(() => {
+            initializeWSS()
+        })
+    })
 
 //Function that checks if any websockets are closed.
 //If they are then they are not appended onto the new list.
@@ -48,9 +57,12 @@ function checkWebsockets() {
 }
 
 function initializeWSS() {
+    console.log("Initializing WSS")
     console.log(emotes)
 
     //Enable unused socket cleanup.
+    console.log(sounds)
+
     setInterval(() => {
         checkWebsockets()
     }, socketCleanupTimerinMilis)
@@ -75,7 +87,10 @@ async function setupSockets() {
                 console.log(controllerSockets.length)
                 const data = {
                     type: "recievedEmotes",
-                    data: emotes
+                    data: {
+                        "emotes": emotes,
+                        "sounds": sounds
+                    }
                 }
                 socket.send(JSON.stringify(data))
                 controllerSocketConnection(socket)
@@ -126,4 +141,28 @@ async function connectAPIs(callback) {
     connectTwitch(process.env['TWITCH_API_SECRET'], (response) => {
         getTwitchEmotes(response, emotes, "Twitch.tv Global", connect7TV)
     })
+}
+
+async function connectMYSQLDatabase(callback) {
+    try {
+        connection.connect()
+        connection.query('SELECT * FROM ' + SOUND_TABLE, (error, results, fields) => {
+            if (error) throw error
+
+            results.forEach(document => {
+                sounds.push({
+                    "id": document.SoundID,
+                    "display": document.Display,
+                    "src": document.URL,
+                    "name": document.SoundName
+                })
+            })
+            callback()
+        })
+    }
+    catch(error) {
+        console.log("Mysql connection error")
+        console.log(error)
+        callback()
+    }
 }
