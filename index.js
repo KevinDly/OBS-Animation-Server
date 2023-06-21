@@ -2,7 +2,7 @@ import { WebSocketServer, WebSocket } from "ws"
 import * as http from 'http'
 import express from "express"
 import cors from "cors"
-import { connectTwitch, getTwitchEmotes } from "./api/twitchapi.js"
+import { connectTwitch, getTwitchEmotes, getUserID } from "./api/twitchapi.js"
 import { get7TVEmotes } from "./api/7tvapi.js"
 import 'dotenv/config'
 import { connection } from "./utils/databaseUtils.js"
@@ -43,6 +43,7 @@ connectMYSQLDatabase(() =>
 //Function that checks if any websockets are closed.
 //If they are then they are not appended onto the new list.
 //controllerSockets is then updated.
+//TODO: Check for repeated sockets (refreshing the webpage will cause multiple duplicate sockets to appear)
 function checkWebsockets() {
     console.log("Checking websockets")
     let updatedSockets = []
@@ -126,6 +127,21 @@ async function controllerSocketConnection(socket) {
                     }
                 })
                 break;
+            case "twitchAuthData":
+                //TODO: Error handling for the user.
+                connectTwitch(process.env['TWITCH_API_SECRET'], (response) => {
+                    try{
+                        const postUserID = (response) => {
+                            console.log(response)
+                        }
+
+                        getUserID(response, (response) => { postUserID(response) })
+                    }
+                    catch(error) {
+                        console.log(error)
+                    }
+                }, data['code'])
+                break;
             default:
                 break;
         }
@@ -137,9 +153,9 @@ additional emotes have been added or modified, and update client based on that
 information.
 */
 async function connectAPIs(callback) {
-    let connect7TV = () => { get7TVEmotes(emotes, "7TV", callback) }
+    //let connect7TV = () => { get7TVEmotes(emotes, "7TV", callback) }
     connectTwitch(process.env['TWITCH_API_SECRET'], (response) => {
-        getTwitchEmotes(response, emotes, "Twitch.tv Global", connect7TV)
+        getTwitchEmotes(response, emotes, "Twitch.tv Global", callback)
     })
 }
 
