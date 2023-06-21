@@ -83,6 +83,7 @@ async function setupSockets() {
                 displaySockets.push(socket)
                 console.log(displaySockets)
                 break;
+
             case("streamerController"):
                 controllerSockets.push(socket)
                 console.log(controllerSockets.length)
@@ -128,11 +129,36 @@ async function controllerSocketConnection(socket) {
                 })
                 break;
             case "twitchAuthData":
-                //TODO: Error handling for the user.
+                //TODO: Error handling for the user, send data back to tell them to refresh or add emotes depending on failure.
+                //TODO: Make different events for just sending emotes/sounds/etc
                 connectTwitch(process.env['TWITCH_API_SECRET'], (response) => {
                     try{
                         const postUserID = (response) => {
                             console.log(response)
+                            let id;
+                            try {
+                                id = response['data'][0]['id']
+                            }
+                            catch(error) {
+                                console.log(error)
+                                return
+                            }
+
+                            const data = {
+                                "type": "recievedEmotes",
+                                "data": {}
+                            }
+
+                            const emotes7TV = {}
+
+                            const sendNewData = () => {
+                                data["data"]["emotes"] = emotes7TV
+                                console.log("Sending")
+                                console.log(data)
+                                socket.send(JSON.stringify(data))
+                            }
+
+                            get7TVEmotes(emotes7TV, "7TV", id, sendNewData)
                         }
 
                         getUserID(response, (response) => { postUserID(response) })

@@ -2,13 +2,20 @@
 const CHOOBS_ID = "143548078"
 
 //TODO Turns this into a general function alongside the twitch function.
-export function get7TVEmotes(emoteDict, source, callback = () => {}, userID = CHOOBS_ID) {
+export function get7TVEmotes(emoteDict, source, userID, callback = () => {}) {
     fetch(`https://7tv.io/v3/users/twitch/${userID}`, {
         method: 'GET',
     })
     .then(response => response.json())
     .then(response => {
         let emoteList = []
+        console.log(response)
+
+        //Means the user has no emotes currently available.
+        //TODO: Send error message back to user
+        if(!("emotes" in response.emote_set))
+            return
+        
         response.emote_set.emotes.forEach(data => {
         const emoteFormatting = {
             images: {
