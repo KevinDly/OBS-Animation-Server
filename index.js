@@ -3,6 +3,7 @@ import * as http from 'http'
 import express from "express"
 import cors from "cors"
 import { connectTwitch, getTwitchEmotes, getUserID } from "./api/twitchapi.js"
+import { generateIDs } from "./utils/dataUtils.js"
 import { get7TVEmotes } from "./api/7tvapi.js"
 import 'dotenv/config'
 import { connection } from "./utils/databaseUtils.js"
@@ -131,6 +132,7 @@ async function controllerSocketConnection(socket) {
             case "twitchAuthData":
                 //TODO: Error handling for the user, send data back to tell them to refresh or add emotes depending on failure.
                 //TODO: Make different events for just sending emotes/sounds/etc
+                //TODO: Remove this stuff from here to it's own functions, as later on we'll need to do a lot with user-id related data.
                 connectTwitch(process.env['TWITCH_API_SECRET'], (response) => {
                     try{
                         const postUserID = (response) => {
@@ -149,16 +151,15 @@ async function controllerSocketConnection(socket) {
                                 "data": {}
                             }
 
-                            const emotes7TV = {}
-
-                            const sendNewData = () => {
-                                data["data"]["emotes"] = emotes7TV
+                            const sendNewData = (response) => {
+                                response = generateIDs(response, "name", "id")
+                                data["data"]["emotes"] = {"7TV": {"data": response}}
                                 console.log("Sending")
                                 console.log(data)
                                 socket.send(JSON.stringify(data))
                             }
 
-                            get7TVEmotes(emotes7TV, "7TV", id, sendNewData)
+                            get7TVEmotes(id, sendNewData)
                         }
 
                         getUserID(response, (response) => { postUserID(response) })
@@ -180,8 +181,13 @@ information.
 */
 async function connectAPIs(callback) {
     //let connect7TV = () => { get7TVEmotes(emotes, "7TV", callback) }
+    const updateEmotes = (response) => {
+        //const data = generateIDs(response['data'], "name", "id")
+        emotes["Twitch.tv Global"] = response
+        callback()
+    }
     connectTwitch(process.env['TWITCH_API_SECRET'], (response) => {
-        getTwitchEmotes(response, emotes, "Twitch.tv Global", callback)
+        getTwitchEmotes(response, updateEmotes)
     })
 }
 

@@ -2,7 +2,7 @@
 const CHOOBS_ID = "143548078"
 
 //TODO Turns this into a general function alongside the twitch function.
-export function get7TVEmotes(emoteDict, source, userID, callback = () => {}) {
+export function get7TVEmotes(userID, callback = () => {}) {
     fetch(`https://7tv.io/v3/users/twitch/${userID}`, {
         method: 'GET',
     })
@@ -28,7 +28,6 @@ export function get7TVEmotes(emoteDict, source, userID, callback = () => {}) {
         }
         emoteList.push(emoteFormatting)
         })
-        emoteDict[source] = {data: emoteList}
-        callback()
+        callback(emoteList)
     })
 }
