@@ -27,12 +27,11 @@ app.use(cors({
 }))
 
 app.use(express.static("public"))
+console.log("Express server initialized")
 
-console.log("Server initialized")
 let displaySockets = []
 let controllerSockets = []
 
-console.log("Connecting to APIs")
 initializeServerData()
 
 //Function that checks if any websockets are closed.
@@ -132,24 +131,8 @@ async function controllerSocketConnection(socket) {
     })
 }
 
-
-/*TODO: Think about hashing the objects such that we can check if
-additional emotes have been added or modified, and update client based on that
-information.
-*/
-async function connectAPIs(callback) {
-    //let connect7TV = () => { get7TVEmotes(emotes, "7TV", callback) }
-    const updateEmotes = (response) => {
-        //const data = generateIDs(response['data'], "name", "id")
-        emotes["Twitch.tv Global"] = response
-        callback()
-    }
-    connectTwitch(process.env['TWITCH_API_SECRET'], (response) => {
-        getTwitchEmotes(response, updateEmotes)
-    })
-}
-
 async function initializeServerData() {
+    console.log("Connecting to APIs")
     const updateEmotes = (response) => {
         //const data = generateIDs(response['data'], "name", "id")
         emotes["Twitch.tv Global"] = response
