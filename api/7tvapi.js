@@ -9,6 +9,7 @@ export function get7TVEmotes(userID, callback = () => {}) {
     .then(response => response.json())
     .then(response => {
         let emoteList = []
+        console.log("7TV Results")
         console.log(response)
 
         //Means the user has no emotes currently available.

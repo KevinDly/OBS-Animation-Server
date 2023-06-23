@@ -14,3 +14,4 @@ executeAnimation -> Executes the animation. Data payload should be as follows
                 Spawn Ayaya
             </button>
             <input type = "number" id="emoteDensity" name="emote" min = "1" max = "100">
+            

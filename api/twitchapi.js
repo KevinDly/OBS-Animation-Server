@@ -8,7 +8,7 @@ const TWITCH_OAUTH_URL = 'https://id.twitch.tv/oauth2/token'
 //TODO: Replace a, b.
 //Function that grabs the emotes from a connected api.
 export function getTwitchEmotes({access_token, a, b}, callback = () => {}) {
-    fetch(TWITCH_GLOBAL_EMOTES_URL, {
+    return fetch(TWITCH_GLOBAL_EMOTES_URL, {
         headers: {
             'Authorization': 'Bearer ' + access_token,
             'Client-Id': TWITCH_CLIENT_ID
@@ -22,7 +22,8 @@ export function getTwitchEmotes({access_token, a, b}, callback = () => {}) {
         callback()*/
 
         console.log(callback)
-        callback(response)
+        //callback(response)
+        return response
     })
 }
 
@@ -41,7 +42,8 @@ export function getUserID(accessResponse, callback = () => {}) {
 
 //Function that will attempt to connect to twitch.tv's api.
 //TODO: Refactor to be just a connection function => take a lambda that is specific per api
-export function connectTwitch(secret, callback, code = "") {
+//TODO: Check for failure connection error.
+export async function connectTwitch(secret, code = "") {
     let twitchSearchParams = {
         'client_id': TWITCH_CLIENT_ID,
         'client_secret': secret,
@@ -55,7 +57,7 @@ export function connectTwitch(secret, callback, code = "") {
         twitchSearchParams["redirect_uri"] = "http://localhost:3000/"
     }
 
-    fetch(TWITCH_OAUTH_URL, {
+    return fetch(TWITCH_OAUTH_URL, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -65,6 +67,7 @@ export function connectTwitch(secret, callback, code = "") {
     .then(response => response.json())
     .then(response => {
         console.log(response)
-        callback(response)
+        //callback(response)
+        return response
     })
 }

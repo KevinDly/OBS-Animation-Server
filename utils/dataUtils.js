@@ -22,3 +22,26 @@ export function generateIDs(data, keyName, suffix) {
 
     return updatedData
 }
+
+function generateDataDict(dataTypes, dataArray) {
+    const data = {}
+    dataTypes.forEach((type, index) => {
+        data[type] = dataArray[index]
+    })
+    return data
+}
+
+export function generateDataResponse(eventType, dataTypes, dataArray) {
+    const data = {
+        type: eventType,
+        data: generateDataDict(dataTypes, dataArray)
+    }
+
+    return data
+}
+
+export function sendData(socket, data) {
+    console.log(data)
+    const stringifiedData = JSON.stringify(data)
+    socket.send(stringifiedData)
+}

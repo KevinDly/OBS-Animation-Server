@@ -1,19 +1,20 @@
 import { WebSocketServer, WebSocket } from "ws"
+import { connectTwitch, getTwitchEmotes, getUserID } from "./api/twitchapi.js"
+import { generateDataResponse, generateIDs, sendData } from "./utils/dataUtils.js"
+import { connectMYSQLDatabase } from "./utils/databaseUtils.js"
+import { executeAnimation, twitchAuthData } from "./socket_handlers/incomingSocketEvents.js"
+
 import * as http from 'http'
 import express from "express"
 import cors from "cors"
-import { connectTwitch, getTwitchEmotes, getUserID } from "./api/twitchapi.js"
-import { generateIDs } from "./utils/dataUtils.js"
-import { get7TVEmotes } from "./api/7tvapi.js"
-import 'dotenv/config'
-import { connection } from "./utils/databaseUtils.js"
 
+import 'dotenv/config'
+
+import { EVENT_SENT_DATA, SOCKET_DISPLAY, SOCKET_LIVESTREAMER_CONTROLLER } from './constants/eventConstants.js'
 const AYAYA_URL = "https://play-lh.googleusercontent.com/kTkV3EWtNTDVCzRnUdbI5KdXm6Io-IM4Fb3mDcmX9-EOCEXJxnAxaph_leEn6m61E0I"
 const socketCleanupTimerinMilis = process.env['SOCKET_CLEANUP_TIMER_IN_MILIS']
 const port = 2999
 const app = express()
-
-const SOUND_TABLE = "sound_information"
 
 const server = http.createServer(app)
 const wss = new WebSocketServer({ server })
@@ -32,14 +33,7 @@ let displaySockets = []
 let controllerSockets = []
 
 console.log("Connecting to APIs")
-
-//TODO: MAKE IT SO THAT YOU DONT HAVE TO KEEP ADDING ON TO THE CALLBACKS WHEN YOU NEED TO CHAIN THEM
-connectMYSQLDatabase(() => 
-    {
-        connectAPIs(() => {
-            initializeWSS()
-        })
-    })
+initializeServerData()
 
 //Function that checks if any websockets are closed.
 //If they are then they are not appended onto the new list.
@@ -58,10 +52,9 @@ function checkWebsockets() {
     console.log(controllerSockets.length)
 }
 
-function initializeWSS() {
+async function initializeWSS() {
     console.log("Initializing WSS")
     console.log(emotes)
-
     //Enable unused socket cleanup.
     console.log(sounds)
 
@@ -80,22 +73,17 @@ async function setupSockets() {
 
         //TODO: Remove unused connections.
         switch(socket.protocol){
-            case("streamDisplay"):
+            case(SOCKET_DISPLAY):
                 displaySockets.push(socket)
                 console.log(displaySockets)
                 break;
 
-            case("streamerController"):
+            case(SOCKET_LIVESTREAMER_CONTROLLER):
                 controllerSockets.push(socket)
                 console.log(controllerSockets.length)
-                const data = {
-                    type: "recievedEmotes",
-                    data: {
-                        "emotes": emotes,
-                        "sounds": sounds
-                    }
-                }
-                socket.send(JSON.stringify(data))
+
+                sendData(socket, 
+                    generateDataResponse(EVENT_SENT_DATA, ["emotes", "sounds"], [emotes, sounds]))
                 controllerSocketConnection(socket)
                 break;
         }
@@ -110,8 +98,16 @@ async function setupSockets() {
 async function controllerSocketConnection(socket) {
     socket.on("message", (message) => {
         let newMessage = JSON.parse(message)
-        const type = newMessage.type
-        const data = newMessage.data
+        let type, data
+        try{
+            type = newMessage.type
+            data = newMessage.data
+        }
+        catch {
+            console.log("Unknown message recieved.")
+            console.log(newMessage)
+            return
+        }
     
         console.log("Recieved message.")
         console.log(`%s`, newMessage)
@@ -120,60 +116,22 @@ async function controllerSocketConnection(socket) {
         //TODO: Put data
         switch(type) {
             case "executeAnimation":
-                displaySockets.forEach((displaySocket) => {
-                    try{
-                        displaySocket.send(JSON.stringify(newMessage))
-                    }
-                    catch(error){
-                        console.log(error)
-                    }
-                })
+                executeAnimation(displaySockets, newMessage)
                 break;
             case "twitchAuthData":
                 //TODO: Error handling for the user, send data back to tell them to refresh or add emotes depending on failure.
                 //TODO: Make different events for just sending emotes/sounds/etc
                 //TODO: Remove this stuff from here to it's own functions, as later on we'll need to do a lot with user-id related data.
-                connectTwitch(process.env['TWITCH_API_SECRET'], (response) => {
-                    try{
-                        const postUserID = (response) => {
-                            console.log(response)
-                            let id;
-                            try {
-                                id = response['data'][0]['id']
-                            }
-                            catch(error) {
-                                console.log(error)
-                                return
-                            }
-
-                            const data = {
-                                "type": "recievedEmotes",
-                                "data": {}
-                            }
-
-                            const sendNewData = (response) => {
-                                response = generateIDs(response, "name", "id")
-                                data["data"]["emotes"] = {"7TV": {"data": response}}
-                                console.log("Sending")
-                                console.log(data)
-                                socket.send(JSON.stringify(data))
-                            }
-
-                            get7TVEmotes(id, sendNewData)
-                        }
-
-                        getUserID(response, (response) => { postUserID(response) })
-                    }
-                    catch(error) {
-                        console.log(error)
-                    }
-                }, data['code'])
+                twitchAuthData(data, socket)
                 break;
             default:
+                console.log("Unknown event recieved.")
+                console.log(newMessage)
                 break;
         }
     })
 }
+
 
 /*TODO: Think about hashing the objects such that we can check if
 additional emotes have been added or modified, and update client based on that
@@ -191,26 +149,25 @@ async function connectAPIs(callback) {
     })
 }
 
-async function connectMYSQLDatabase(callback) {
-    try {
-        connection.connect()
-        connection.query('SELECT * FROM ' + SOUND_TABLE, (error, results, fields) => {
-            if (error) throw error
+async function initializeServerData() {
+    const updateEmotes = (response) => {
+        //const data = generateIDs(response['data'], "name", "id")
+        emotes["Twitch.tv Global"] = response
+    }
 
-            results.forEach(document => {
-                sounds.push({
-                    "id": document.SoundID,
-                    "display": document.Display,
-                    "src": document.URL,
-                    "name": document.SoundName
-                })
-            })
-            callback()
-        })
-    }
-    catch(error) {
-        console.log("Mysql connection error")
-        console.log(error)
-        callback()
-    }
+    console.log("Connecting to MySQL Database")
+    connectMYSQLDatabase(sounds).then(() => {
+        console.log("Connecting to Twitch")
+        return connectTwitch(process.env['TWITCH_API_SECRET'])
+    }).then((response) => {
+        console.log("Getting Twitch Emotes")
+        return getTwitchEmotes(response)
+    }).then((response) => {
+        console.log("Updating Twitch emotes")
+        updateEmotes(response)
+    }).then(() => {
+        console.log("WSS")
+        initializeWSS()
+    })
+
 }
