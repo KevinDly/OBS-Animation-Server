@@ -10,7 +10,8 @@ import cors from "cors"
 
 import 'dotenv/config'
 
-import { EVENT_SENT_DATA, SOCKET_DISPLAY, SOCKET_LIVESTREAMER_CONTROLLER } from './constants/eventConstants.js'
+import { EVENT_SENT_DATA, SOCKET_DISPLAY, SOCKET_LIVESTREAMER_CONTROLLER,
+    EVENT_EXECUTE_ANIMATION, EVENT_TWITCH_USER_AUTHENTICATION } from './constants/eventConstants.js'
 const AYAYA_URL = "https://play-lh.googleusercontent.com/kTkV3EWtNTDVCzRnUdbI5KdXm6Io-IM4Fb3mDcmX9-EOCEXJxnAxaph_leEn6m61E0I"
 const socketCleanupTimerinMilis = process.env['SOCKET_CLEANUP_TIMER_IN_MILIS']
 const port = 2999
@@ -94,6 +95,7 @@ async function setupSockets() {
     })
 }
 
+
 async function controllerSocketConnection(socket) {
     socket.on("message", (message) => {
         let newMessage = JSON.parse(message)
@@ -114,10 +116,10 @@ async function controllerSocketConnection(socket) {
         console.log("data", data)
         //TODO: Put data
         switch(type) {
-            case "executeAnimation":
+            case EVENT_EXECUTE_ANIMATION:
                 executeAnimation(displaySockets, newMessage)
                 break;
-            case "twitchAuthData":
+            case EVENT_TWITCH_USER_AUTHENTICATION:
                 //TODO: Error handling for the user, send data back to tell them to refresh or add emotes depending on failure.
                 //TODO: Make different events for just sending emotes/sounds/etc
                 //TODO: Remove this stuff from here to it's own functions, as later on we'll need to do a lot with user-id related data.
