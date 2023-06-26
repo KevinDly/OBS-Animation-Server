@@ -14,11 +14,18 @@ import { EVENT_SENT_DATA, SOCKET_DISPLAY, SOCKET_LIVESTREAMER_CONTROLLER,
     EVENT_EXECUTE_ANIMATION, EVENT_TWITCH_USER_AUTHENTICATION } from './constants/eventConstants.js'
 const AYAYA_URL = "https://play-lh.googleusercontent.com/kTkV3EWtNTDVCzRnUdbI5KdXm6Io-IM4Fb3mDcmX9-EOCEXJxnAxaph_leEn6m61E0I"
 const socketCleanupTimerinMilis = process.env['SOCKET_CLEANUP_TIMER_IN_MILIS']
-const port = 2999
-const app = express()
 
-const server = http.createServer(app)
-const wss = new WebSocketServer({ server })
+const FILE_PORT = process.env['PORT_FILE_AND_WSS']
+const file_app = express()
+const file_server = http.createServer(file_app)
+const wss = new WebSocketServer({ server: file_server })
+
+const TWITCH_WEBHOOK_PORT = process.env['PORT_WEBHOOK']
+const webhook_app = express()
+const webhook_server = http.createServer(webhook_server)
+
+let displaySockets = []
+let controllerSockets = []
 
 let emotes = {}
 let sounds = []
@@ -29,9 +36,6 @@ app.use(cors({
 
 app.use(express.static("public"))
 console.log("Express server initialized")
-
-let displaySockets = []
-let controllerSockets = []
 
 initializeServerData()
 
@@ -90,8 +94,8 @@ async function setupSockets() {
 
     })
 
-    server.listen(port, () => {
-        console.log(`Server started on port ${server.address().port}`);
+    file_server.listen(FILE_PORT, () => {
+        console.log(`Server started on port ${file_server.address().port}`);
     })
 }
 
