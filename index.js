@@ -3,7 +3,7 @@ import { connectTwitch, getTwitchEmotes, getUserID } from "./api/twitchapi.js"
 import { generateDataResponse, generateIDs, sendData } from "./utils/dataUtils.js"
 import { connectMYSQLDatabase } from "./utils/databaseUtils.js"
 import { executeAnimation, twitchAuthData } from "./socket_handlers/incomingSocketEvents.js"
-
+import { configureTwitchWebhooks } from "./api/twitchEventApi.js"
 import * as http from 'http'
 import express from "express"
 import cors from "cors"
@@ -12,7 +12,7 @@ import 'dotenv/config'
 
 import { EVENT_SENT_DATA, SOCKET_DISPLAY, SOCKET_LIVESTREAMER_CONTROLLER,
     EVENT_EXECUTE_ANIMATION, EVENT_TWITCH_USER_AUTHENTICATION } from './constants/eventConstants.js'
-const AYAYA_URL = "https://play-lh.googleusercontent.com/kTkV3EWtNTDVCzRnUdbI5KdXm6Io-IM4Fb3mDcmX9-EOCEXJxnAxaph_leEn6m61E0I"
+
 const socketCleanupTimerinMilis = process.env['SOCKET_CLEANUP_TIMER_IN_MILIS']
 
 const FILE_PORT = process.env['PORT_FILE_AND_WSS']
@@ -21,8 +21,7 @@ const file_server = http.createServer(file_app)
 const wss = new WebSocketServer({ server: file_server })
 
 const TWITCH_WEBHOOK_PORT = process.env['PORT_WEBHOOK']
-const webhook_app = express()
-const webhook_server = http.createServer(webhook_server)
+const webhook_server = express()
 
 let displaySockets = []
 let controllerSockets = []
@@ -30,11 +29,11 @@ let controllerSockets = []
 let emotes = {}
 let sounds = []
 
-app.use(cors({
+file_app.use(cors({
     origin: true
 }))
 
-app.use(express.static("public"))
+file_app.use(express.static("public"))
 console.log("Express server initialized")
 
 initializeServerData()
@@ -155,8 +154,11 @@ async function initializeServerData() {
         console.log("Updating Twitch emotes")
         updateEmotes(response)
     }).then(() => {
+        console.log("Twitch Webhook Server")
+        configureTwitchWebhooks(webhook_server, TWITCH_WEBHOOK_PORT)
+    })
+    .then(() => {
         console.log("WSS")
         initializeWSS()
     })
-
 }
