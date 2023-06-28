@@ -1,3 +1,4 @@
+import './env.js' //MUST Be the first import
 import { WebSocketServer, WebSocket } from "ws"
 import { connectTwitch, getTwitchEmotes, getUserID } from "./api/twitchapi.js"
 import { generateDataResponse, generateIDs, sendData } from "./utils/dataUtils.js"
@@ -8,8 +9,9 @@ import * as http from 'http'
 import express from "express"
 import cors from "cors"
 
-import 'dotenv/config'
-
+//const key = dotenv.config({ path: !process.env.NODE_ENV ? ".env" : `.env.${process.env.NODE_ENV}`})
+console.log("Currently in: " + process.env.NODE_ENV)
+console.log(process.env['PORT_FILE_AND_WSS'])
 import { EVENT_SENT_DATA, SOCKET_DISPLAY, SOCKET_LIVESTREAMER_CONTROLLER,
     EVENT_EXECUTE_ANIMATION, EVENT_TWITCH_USER_AUTHENTICATION } from './constants/eventConstants.js'
 

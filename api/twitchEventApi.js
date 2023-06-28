@@ -1,6 +1,6 @@
 import express from "express"
 import crypto from "crypto"
-import 'dotenv/config'
+
 // Notification request headers
 const TWITCH_MESSAGE_ID = 'Twitch-Eventsub-Message-Id'.toLowerCase();
 const TWITCH_MESSAGE_TIMESTAMP = 'Twitch-Eventsub-Message-Timestamp'.toLowerCase();

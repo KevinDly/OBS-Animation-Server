@@ -1,5 +1,4 @@
 import { createConnection } from "mysql"
-import 'dotenv/config'
 
 const SOUND_TABLE = "sound_information"
 

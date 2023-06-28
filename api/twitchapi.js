@@ -1,9 +1,9 @@
-const TWITCH_GLOBAL_EMOTES_URL = 'https://api.twitch.tv/helix/chat/emotes/global'
-const TWITCH_VALIDATION_URL = 'https://id.twitch.tv/oauth2/validate'
+const TWITCH_GLOBAL_EMOTES_URL = process.env['TWITCH_GLOBAL_EMOTES_URL']
+const TWITCH_VALIDATION_URL = process.env['TWITCH_VALIDATION_URL']
 const TWITCH_CLIENT_ID = 'bmkhxh3eb8cl8uvtkwm6fbrahzgkdx'
-const TWITCH_USERS_URL = 'https://api.twitch.tv/helix/users'
+const TWITCH_USERS_URL = process.env['TWITCH_USERS_URL']
 
-const TWITCH_OAUTH_URL = 'https://id.twitch.tv/oauth2/token'
+const TWITCH_OAUTH_URL = process.env['TWITCH_OAUTH_URL']
 
 //TODO: Replace a, b.
 //Function that grabs the emotes from a connected api.
