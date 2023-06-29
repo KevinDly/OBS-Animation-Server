@@ -3,17 +3,16 @@ import { WebSocketServer, WebSocket } from "ws"
 import { connectTwitch, getTwitchEmotes, getUserID } from "./api/twitchapi.js"
 import { generateDataResponse, generateIDs, sendData } from "./utils/dataUtils.js"
 import { connectMYSQLDatabase } from "./utils/databaseUtils.js"
-import { executeAnimation, twitchAuthData } from "./socket_handlers/incomingSocketEvents.js"
+import { executeAnimation, twitchAuthData, getTwitchDevData} from "./socket_handlers/incomingSocketEvents.js"
 import { configureTwitchWebhooks } from "./api/twitchEventApi.js"
 import * as http from 'http'
 import express from "express"
 import cors from "cors"
 
-//const key = dotenv.config({ path: !process.env.NODE_ENV ? ".env" : `.env.${process.env.NODE_ENV}`})
-console.log("Currently in: " + process.env.NODE_ENV)
-console.log(process.env['PORT_FILE_AND_WSS'])
+console.log("Current environment: " + process.env.NODE_ENV ? process.env.NODE_ENV : "default" )
+
 import { EVENT_SENT_DATA, SOCKET_DISPLAY, SOCKET_LIVESTREAMER_CONTROLLER,
-    EVENT_EXECUTE_ANIMATION, EVENT_TWITCH_USER_AUTHENTICATION } from './constants/eventConstants.js'
+    EVENT_EXECUTE_ANIMATION, EVENT_TWITCH_USER_AUTHENTICATION, EVENT_TWITCH_DEV_AUTH_TYPE } from './constants/eventConstants.js'
 
 const socketCleanupTimerinMilis = process.env['SOCKET_CLEANUP_TIMER_IN_MILIS']
 
@@ -130,6 +129,9 @@ async function controllerSocketConnection(socket) {
                 //TODO: Remove this stuff from here to it's own functions, as later on we'll need to do a lot with user-id related data.
                 twitchAuthData(data, socket)
                 break;
+            case EVENT_TWITCH_DEV_AUTH_TYPE:
+                getTwitchDevData(data, socket)
+                break;
             default:
                 console.log("Unknown event recieved.")
                 console.log(newMessage)
@@ -148,9 +150,13 @@ async function initializeServerData() {
     console.log("Connecting to MySQL Database")
     connectMYSQLDatabase(sounds).then(() => {
         console.log("Connecting to Twitch")
-        return connectTwitch(process.env['TWITCH_API_SECRET'])
+        let additional_parameters = {}
+        if(process.env.NODE_ENV == 'development') additional_parameters = {grant_type: "client_credentials"}
+        //TODO: Catch twitch connection failure or refusal
+        return connectTwitch(process.env['TWITCH_API_SECRET'], process.env['TWITCH_OAUTH_URL'], additional_parameters)
     }).then((response) => {
         console.log("Getting Twitch Emotes")
+        console.log(response)
         return getTwitchEmotes(response)
     }).then((response) => {
         console.log("Updating Twitch emotes")

@@ -1,6 +1,6 @@
 const TWITCH_GLOBAL_EMOTES_URL = process.env['TWITCH_GLOBAL_EMOTES_URL']
 const TWITCH_VALIDATION_URL = process.env['TWITCH_VALIDATION_URL']
-const TWITCH_CLIENT_ID = 'bmkhxh3eb8cl8uvtkwm6fbrahzgkdx'
+const TWITCH_CLIENT_ID = process.env['TWITCH_CLIENT_ID']
 const TWITCH_USERS_URL = process.env['TWITCH_USERS_URL']
 
 const TWITCH_OAUTH_URL = process.env['TWITCH_OAUTH_URL']
@@ -43,21 +43,20 @@ export function getUserID(accessResponse, callback = () => {}) {
 //Function that will attempt to connect to twitch.tv's api.
 //TODO: Refactor to be just a connection function => take a lambda that is specific per api
 //TODO: Check for failure connection error.
-export async function connectTwitch(secret, code = "") {
+export async function connectTwitch(secret, authorization_url, additional_parameters = {}) {
     let twitchSearchParams = {
         'client_id': TWITCH_CLIENT_ID,
         'client_secret': secret,
         'grant_type': 'client_credentials'
     }
 
-    //TODO: Unhardcode this later.
-    if(code !== "") {
-        twitchSearchParams["code"] = code;
-        twitchSearchParams["grant_type"] = "authorization_code";
-        twitchSearchParams["redirect_uri"] = "http://localhost:3000/"
-    }
+    Object.keys(additional_parameters).map(key => {
+        twitchSearchParams[key] = additional_parameters[key]
+    })
 
-    return fetch(TWITCH_OAUTH_URL, {
+    console.log(twitchSearchParams)
+    console.log(authorization_url)
+    return fetch(authorization_url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -67,7 +66,6 @@ export async function connectTwitch(secret, code = "") {
     .then(response => response.json())
     .then(response => {
         console.log(response)
-        //callback(response)
         return response
     })
 }

@@ -26,7 +26,7 @@ function handle7TVConnection(socket, id) {
 }
 
 export function twitchAuthData(data, socket) {
-    connectTwitch(process.env['TWITCH_API_SECRET'], data['code']).then((twitchResponse) => {
+    connectTwitch(process.env['TWITCH_API_SECRET'], process.env['TWITCH_OAUTH_URL'], {"code": data['code'], "grant_type": "authorization_code", "redirect_uri": "http://localhost:3000/"}).then((twitchResponse) => {
         try {
             const postUserID = (response) => {
                 let id
@@ -48,6 +48,15 @@ export function twitchAuthData(data, socket) {
         catch (error) {
             console.log(error)
         }
+    })
+}
+
+export function getTwitchDevData(data, socket) {
+    connectTwitch(process.env['TWITCH_API_SECRET'], process.env['TWITCH_OAUTH_URL_USER'], {grant_type: "user_token", user_id: data['id'], scope: data['scope']}).then((response) => {
+        console.log("Mock user data token recieved")
+        console.log(response)
+    }).catch((error) => {
+        console.log(error)
     })
 }
 
