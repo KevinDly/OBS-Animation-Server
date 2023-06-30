@@ -51,8 +51,10 @@ export function twitchAuthData(data, socket) {
     })
 }
 
+//TODO: FIX THIS, FOR SOME REASON AUTHORIZATION REQUEST IS MALFORMED??
+//https://dev.twitch.tv/docs/cli/mock-api-command/
 export function getTwitchDevData(data, socket) {
-    connectTwitch(process.env['TWITCH_API_SECRET'], process.env['TWITCH_OAUTH_URL_USER'], {grant_type: "user_token", user_id: data['id'], scope: data['scope']}).then((response) => {
+    connectTwitch(process.env['TWITCH_API_SECRET'], process.env['TWITCH_OAUTH_URL_USER'], {grant_type: "user_token", user_id: data['id'], scope: data['scope']}, data['dev']).then((response) => {
         console.log("Mock user data token recieved")
         console.log(response)
     }).catch((error) => {
