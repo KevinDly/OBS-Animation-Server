@@ -77,8 +77,6 @@ export async function connectTwitch(secret, authorization_url, additional_parame
         })
     }
 
-    console.log(twitchSearchParams)
-    console.log(authorization_url)
     return fetch(authorization_url, {
         method: 'POST',
         headers: {
