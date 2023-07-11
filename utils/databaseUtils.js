@@ -11,10 +11,12 @@ export let connection = createConnection({
 })
 
 export async function connectMYSQLDatabase(sounds, callback = () => {}) {
-    try {
-        connection.connect()
-        connection.query('SELECT * FROM ' + SOUND_TABLE, (error, results, fields) => {
-            if (error) throw error
+    connection.connect()
+    connection.query('SELECT * FROM ' + SOUND_TABLE, (error, results, fields) => {
+        try {
+            if(error) {
+                throw error
+            }
 
             results.forEach(document => {
                 sounds.push({
@@ -24,14 +26,9 @@ export async function connectMYSQLDatabase(sounds, callback = () => {}) {
                     "name": document.SoundName
                 })
             })
-        })
-
-        return Promise.resolve("Success")
-    }
-    catch(error) {
-        console.log("Mysql connection error")
-        console.log(error)
-        return Promise.reject("Failure")
-    }
-
+        }
+        catch(error) {
+            console.log(error)
+        }   
+    })
 }

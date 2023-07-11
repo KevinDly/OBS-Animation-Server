@@ -2,7 +2,7 @@ const TWITCH_GLOBAL_EMOTES_URL = process.env['TWITCH_GLOBAL_EMOTES_URL']
 const TWITCH_VALIDATION_URL = process.env['TWITCH_VALIDATION_URL']
 const TWITCH_CLIENT_ID = process.env['TWITCH_CLIENT_ID']
 const TWITCH_USERS_URL = process.env['TWITCH_USERS_URL']
-
+const TWITCH_EVENTSUB_URL = process.env['TWITCH_SUB_URL']
 const TWITCH_OAUTH_URL = process.env['TWITCH_OAUTH_URL']
 
 //TODO: Replace a, b.
@@ -85,6 +85,40 @@ export async function connectTwitch(secret, authorization_url, additional_parame
         body: twitchSearchParams
     })
     .then(response => response.json())
+    .then(response => {
+        console.log(response)
+        return response
+    })
+}
+
+export function subscribeToEvent(type, id, access_token, transport, version = "beta") {
+    console.log(TWITCH_EVENTSUB_URL)
+    console.log(type)
+    console.log(id)
+    console.log(access_token)
+    console.log(transport)
+    const body = JSON.stringify({
+        "type": type,
+        "version": version,
+        "condition": {
+            "broadcaster_user_id": id
+        },
+        "transport": transport
+    })
+
+    console.log(body)
+    fetch(TWITCH_EVENTSUB_URL, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${access_token}`,
+            'Client-Id': TWITCH_CLIENT_ID,
+            'Content-Type': 'application/json',
+        },
+        body: body
+    })
+    .catch(error => error)
+    .then(response => response.json())
+    .catch(error => error)
     .then(response => {
         console.log(response)
         return response

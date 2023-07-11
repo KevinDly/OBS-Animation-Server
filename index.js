@@ -1,7 +1,7 @@
 import './env.js' //MUST Be the first import
 import { WebSocketServer, WebSocket } from "ws"
-import { connectTwitch, getTwitchEmotes, getUserID } from "./api/twitchapi.js"
-import { generateDataResponse, generateIDs, sendData } from "./utils/dataUtils.js"
+import { connectTwitch, getTwitchEmotes, subscribeToEvent } from "./api/twitchapi.js"
+import { generateDataResponse, sendData } from "./utils/dataUtils.js"
 import { connectMYSQLDatabase } from "./utils/databaseUtils.js"
 import { executeAnimation, twitchAuthData, getTwitchDevData} from "./socket_handlers/incomingSocketEvents.js"
 import { configureTwitchWebhooks } from "./api/twitchEventApi.js"
@@ -30,6 +30,9 @@ let controllerSockets = []
 let emotes = {}
 let sounds = []
 
+const scopeToTypeDict = {
+    "channel:read:redemptions": "channel.channel_points_custom_reward_redemption.update"
+}
 file_app.use(cors({
     origin: true
 }))
@@ -130,7 +133,21 @@ async function controllerSocketConnection(socket) {
                 twitchAuthData(data, socket)
                 break;
             case EVENT_TWITCH_DEV_AUTH_TYPE:
-                getTwitchDevData(data, socket)
+                getTwitchDevData(data, socket).then((res) => {
+                    console.log("Successful developer connection: ")
+                    console.log(res)
+                    const transport = {
+                        "method": "webhook",
+                        "callback": `http://localhost:${process.env['PORT_WEBHOOK']}/eventsub/`,
+                        "secret": process.env['TWITCH_EVENT_SECRET']
+                    }
+                    
+                    res["scope"].forEach((type) => {
+                        const subResponse = subscribeToEvent(scopeToTypeDict[type], res["id"], res['access_token'], transport, "1")
+                        console.log("Sub response:")
+                        console.log(subResponse)
+                    })
+                })
                 break;
             default:
                 console.log("Unknown event recieved.")
@@ -147,8 +164,12 @@ async function initializeServerData() {
         emotes["Twitch.tv Global"] = response
     }
 
+
+    //TODO: Figure out way to get errors and whatnot to work.
     console.log("Connecting to MySQL Database")
-    connectMYSQLDatabase(sounds).then(() => {
+    connectMYSQLDatabase(sounds).catch((error) => {
+        console.log(error)
+    }).then(() => {
         console.log("Connecting to Twitch")
         let additional_parameters = {}
         if(process.env.NODE_ENV == 'development') additional_parameters = {grant_type: "client_credentials"}

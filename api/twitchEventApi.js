@@ -27,13 +27,13 @@ export function configureTwitchWebhooks(app, port) {
         let secret = getSecret();
         let message = getHmacMessage(req);
         let hmac = HMAC_PREFIX + getHmac(secret, message);  // Signature to compare
-
+        console.log(hmac)
         if (true === verifyMessage(hmac, req.headers[TWITCH_MESSAGE_SIGNATURE])) {
             console.log("signatures match");
 
             // Get JSON object from body, so you can process the message.
             let notification = JSON.parse(req.body);
-            
+            console.log(req.headers[MESSAGE_TYPE])
             if (MESSAGE_TYPE_NOTIFICATION === req.headers[MESSAGE_TYPE]) {
                 // TODO: Do something with the event's data.
 
